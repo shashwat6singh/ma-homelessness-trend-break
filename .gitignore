@@ -2,3 +2,5 @@
 .RData
 .Rproj.user/
 .DS_Store
+.fetch_check/
+__pycache__/

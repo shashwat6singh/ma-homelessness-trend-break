@@ -17,6 +17,23 @@ suppressPackageStartupMessages({
 })
 
 d <- read_csv("data/ma_homelessness_analysis.csv", show_col_types = FALSE)
+
+# Guards on the inputs. Every statistic below assumes a complete 19-year series
+# with no missing rates, so the script fails here rather than reporting a
+# number computed from a short or broken file.
+stopifnot(
+  nrow(d) == 19,
+  all(d$year == 2007:2025),
+  !any(is.na(d$rate)),
+  !any(is.na(d$total)),
+  all(d$total > 0)
+)
+
+# The break year is set BEFORE looking at the series, on institutional grounds:
+# large asylum-seeker arrivals began reaching Massachusetts shelters in 2023.
+# This matters for the Chow test below, whose conventional critical values
+# assume the break date was not chosen by searching the data for the biggest
+# jump. (The series in fact breaks in 2024, not 2023 - see section 3.)
 BREAK <- 2023          # first year treated as post-break
 say <- function(...) cat(sprintf(...), "\n", sep = "")
 
@@ -96,3 +113,12 @@ say("   slope %+.2f per 10,000 per year (p = %.3f)", ci[2, 1], ci[2, 4])
 say("\n6. SHELTER STATUS, 2025")
 say("   unsheltered share %.1f%% (national comparison in the memo: 35.7%%)",
     100 * z$unsheltered / z$total)
+
+# ---- 7. provenance ----------------------------------------------------------
+# Printed so a reader can tell which versions produced the numbers above.
+say("\n7. ENVIRONMENT")
+say("   %s", R.version.string)
+for (pkg in c("readr", "dplyr")) {
+  say("   %-6s %s", pkg, as.character(utils::packageVersion(pkg)))
+}
+say("   run at %s", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"))
